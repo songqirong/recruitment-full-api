@@ -73,7 +73,7 @@ const verifyUser = async(req, res) => {
   if(arr.length > 0){
     return arr[0]
   } else {
-    res.status(422).json({
+    res.status(401).json({
       err_code: 'USER_NOT_EXIST',
       err_msg: '此用户不存在'
     })

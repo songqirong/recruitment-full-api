@@ -122,7 +122,7 @@ router.put('/insertUserDeatilInfo', async(req, res, next) => {
       err_code: 'PARAMS_ERROR',
       err_msg: '传入参数错误'
     })
-  } else if(!(user_avatar && apply_job && personal_introduction)){
+  } else if(user_type === 'SEEKER' && !(user_avatar && apply_job && personal_introduction)){
     res.status(403).json({
       err_code: 'PARAMS_ERROR',
       err_msg: '传入参数错误'

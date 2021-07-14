@@ -58,8 +58,8 @@ const socketFun = function socket(server){
       data2 = { content, to_user_id, from_user_id, create_time: now, read: false, chat_id: `${from_user_id}_${to_user_id}` };
       const arr5 = await addFun(messageModel, data2);
       if( arr5.length > 0 ){
-        socket.emit(from_user_id, { err_code: 0, user_obj: data1, message_obj: arr5[0], insert: insert1, isMe: true, type: 'sendMsg' });
-        socket.emit(to_user_id, { err_code: 0, user_obj: data3, message_obj: arr5[0], insert: insert2, isMe: false, type: 'sendMsg' });
+        io.emit(from_user_id, { err_code: 0, user_obj: data1, message_obj: arr5[0], insert: insert1, isMe: true, type: 'sendMsg' });
+        io.emit(to_user_id, { err_code: 0, user_obj: data3, message_obj: arr5[0], insert: insert2, isMe: false, type: 'sendMsg' });
       }
     })
   })

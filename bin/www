@@ -13,7 +13,7 @@ const { socketFun } = require('../routes/socket');
  * Get port from environment and store in Express.
  */
 
-var port = normalizePort(process.env.PORT || '9120');
+var port = normalizePort(process.env.PORT || '8095');
 app.set('port', port);
 
 /**
