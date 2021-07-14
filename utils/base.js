@@ -54,7 +54,7 @@ function aesDecrypt(encrypted, key) {
 
 // token过期
 function verifyToken(req, res){
-  const { cookie: cookies } = req.headers;
+  const { cookie: cookies = '' } = req.headers;
   const { token } = cookie.parse(cookies);
   if(!token){
     res.status(401).json({

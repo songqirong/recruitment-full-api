@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-const { findFun, addFun, updateFun, verifyUser } = require('../utils/base');
+const { findFun, addFun, updateFun, verifyUser, updateManyFun } = require('../utils/base');
 const MessageModel = require('../model/messageModel');
 const UserListModel = require('../model/userListModel');
 const messageModel = require('../model/messageModel');
@@ -82,7 +82,7 @@ router.get('/getMessageList', async(req, res, next) => {
   const { limit, page, user_id } = req.query;
   const user = await verifyUser(req, res);
   const { _id } = user;
-  MessageModel.find({ $or: [ { chat_id: `${_id}_${user_id}` }, { chat_id: `${user_id}_${_id}` } ] }).sort({ create_time: 1 }).skip((page-1)*limit).limit(Number(limit)).then(arr => {
+  MessageModel.find({ $or: [ { chat_id: `${_id}_${user_id}` }, { chat_id: `${user_id}_${_id}` } ] }).sort({ create_time: -1 }).skip((page-1)*limit).limit(Number(limit)).then(arr => {
     res.status(200).json({
       err_code: 0,
       data: arr,
@@ -92,8 +92,10 @@ router.get('/getMessageList', async(req, res, next) => {
 
 // 更新已读
 router.put('/updateMessageList', async(req, res, next) => {
-  const { chat_id } = req.body;
-  const res1 = await updateManyFun(MessageModel, { chat_id }, { read: true })
+  const { chat_id } = req.query;
+  const user = await verifyUser(req, res);
+  const { _id } = user;
+  const res1 = await updateManyFun(MessageModel, { to_user_id: _id, from_user_id: chat_id }, { read: true })
   console.log(res1, 'res');
   res.status(200).json({
     err_code: 0,
