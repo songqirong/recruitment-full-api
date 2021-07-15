@@ -63,7 +63,9 @@ router.post('/login', function(req, res, next){
       res.setHeader('Set-Cookie', cookie.serialize('token', token, {
         httpOnly: true,
         maxAge: 60 * 60 * 24 * 7, // 1 week
-        // domain: 'localhost:3030',
+        domain: 'localhost:3030',
+        sameSite: None,
+        secure: true,
         path: '/'
       }));
       res.status(200).json({
