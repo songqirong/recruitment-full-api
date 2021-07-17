@@ -14,15 +14,13 @@ router.get("/getList", async(req, res, next) => {
   const arr = await findFun(model, {});
   // SeekerModel.find()
   model.find({}).sort({create_time : -1}).skip((page-1)*limit).limit(Number(limit)).then(arr1 => {
-    if(arr.length > 0){
-      res.json({
-        err_code: 0,
-        data: {
-          list: arr1,
-          total: arr.length
-        }
-      })
-    }
+    res.json({
+      err_code: 0,
+      data: {
+        list: arr1,
+        total: arr.length
+      }
+    })
   })
 })
 module.exports = router;
