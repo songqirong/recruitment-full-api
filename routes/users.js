@@ -3,9 +3,11 @@ var router = express.Router();
 const UserModel = require('../model/userModel');
 const JobModel = require('../model/jobModel');
 const SeekerModel = require('../model/seekerModel');
+const UserListModel = require('../model/userListModel');
 const cookie = require('cookie');
-const { md5_fun, aesEncrypt, findFun, verifyUser, addFun, updateFun, deleteFun } = require('../utils/base');
+const { md5_fun, aesEncrypt, findFun, verifyUser, addFun, updateFun, deleteFun, updateManyFun } = require('../utils/base');
 const { phone_aes_key, token_aes_key } = require('../utils/keys');
+const userListModel = require('../model/userListModel');
 /* GET users listing. */
 
 // 注册
@@ -241,6 +243,35 @@ router.post('/insertDetailInfo', async(req, res, next) => {
         msg: '未知错误'
       })
     }
+})
+
+// 更新头像
+router.patch('/updateAvatar', async(req, res, next) => {
+  const { user_avatar } = req.body;
+  const user = await verifyUser(req, res); // 校验token并查询当前登录人信息
+  const { user_type, _id, nickname } = user;
+  // 更新user表
+  const res1 = await updateFun(UserModel, { _id }, { user_avatar });
+
+  // 更新岗位表
+  const isBoss = user_type === 'BOSS';
+  const model = isBoss ? JobModel : SeekerModel;
+  const rule = {user_id: _id};
+  // 先查询
+  const arr1 = await findFun(model, rule);
+  if(arr1.length > 0){
+    // 后更新
+    const res2 = await updateManyFun(model, rule, { avatar_url: user_avatar });
+  }
+  
+  // 更新聊天用户列表
+  const res3 = await updateManyFun(userListModel, rule, { user_avatar });
+  if(res1.ok > 0 && res3.ok > 0){
+    res.status(200).json({
+      err_code: 0,
+      msg: '更新头像成功'
+    })
+  }
 })
 
 
