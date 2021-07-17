@@ -4,7 +4,7 @@ const UserModel = require('../model/userModel');
 const JobModel = require('../model/jobModel');
 const SeekerModel = require('../model/seekerModel');
 const cookie = require('cookie');
-const { md5_fun, aesEncrypt, findFun, verifyUser, addFun, updateFun } = require('../utils/base');
+const { md5_fun, aesEncrypt, findFun, verifyUser, addFun, updateFun, deleteFun } = require('../utils/base');
 const { phone_aes_key, token_aes_key } = require('../utils/keys');
 /* GET users listing. */
 
@@ -63,14 +63,15 @@ router.post('/login', function(req, res, next){
       res.setHeader('Set-Cookie', cookie.serialize('token', token, {
         httpOnly: true,
         maxAge: 60 * 60 * 24 * 7, // 1 week
-        domain: 'localhost:3030',
-        sameSite: None,
+        domain: 'persion.cn',
+        sameSite: 'None',
         secure: true,
         path: '/'
       }));
       res.status(200).json({
         err_code: 0,
         msg: '登录成功',
+        userInfo: arr[0]
       })
     } else {
       res.status(403).json({
@@ -85,7 +86,7 @@ router.post('/login', function(req, res, next){
 router.post('/logout', function(req, res, next){
   res.setHeader('Set-Cookie', cookie.serialize('token', undefined, {
     maxAge: -1,
-    // domain: ''
+    domain: 'persion.cn',
     path: '/'
   }));
   res.status(200).json({
@@ -115,7 +116,7 @@ router.get('/getUserInfo', async(req, res, next) => {
     apply_job: string,
   } 
 */
-router.put('/insertUserDeatilInfo', async(req, res, next) => {
+router.post('/detailInfo', async(req, res, next) => {
   const { user_avatar, company_name, recruitment_salary, recruitment_job, recruitment_request, apply_job, personal_introduction } = req.body;
   const user = await verifyUser(req, res); // 校验token并查询当前登录人信息
   const { user_type, _id, nickname } = user;
@@ -165,20 +166,81 @@ router.put('/insertUserDeatilInfo', async(req, res, next) => {
 })
 
 // 获取用户详细信息（补充信息）
-router.get('/getDetailInfo', async(req, res) => {
+router.get('/detailInfo', async(req, res) => {
   const user = await verifyUser(req, res);
-  const { _id, user_type, nickname } = user;
+  const { _id, user_type } = user;
   const isBoss = user_type === 'BOSS';
   const fn = isBoss ? 
   JobModel 
   : 
   SeekerModel;
-  fn.find({user_id: _id}).then(arr1 => {
+  fn.find({user_id: _id}).sort({ create_time: -1 }).then(arr1 => {
     res.status(200).json({
       err_code: 0,
       data: arr1
     })
   })
+});
+
+// 更新用户详细信息
+router.patch(`/detailInfo/:id`, async (req, res) => {
+  const { id } = req.params;
+  const obj = req.body;
+  const { user_type } = await verifyUser(req, res);
+  const model = user_type === 'BOSS'? JobModel : SeekerModel;
+  // 先查找
+  const res1 = await updateFun(model, { _id: id }, obj);
+  if(res1.ok > 0){
+    res.status(200).json({
+      err_code: 0,
+      msg: '更新信息成功'
+    })
+  }
+})
+
+// 删除用户详细信息
+router.delete('/detailInfo/:id', async (req, res) => {
+  const { id } = req.params;
+  const { user_type } = await verifyUser(req, res);
+  const model = user_type === 'BOSS'? JobModel : SeekerModel;
+  const res1 = await deleteFun(model, { _id: id });
+  res.status(200).json({
+    err_code: 0,
+    msg: '删除信息成功'
+  })
+})
+
+// 用户主页新增详细信息
+router.post('/insertDetailInfo', async(req, res, next) => {
+  const { company_name = '', recruitment_salary = 0, recruitment_job = '', recruitment_request = '', apply_job = '', personal_introduction = '' } = req.body;
+  const user = await verifyUser(req, res); // 校验token并查询当前登录人信息
+  const { user_type, _id, nickname, user_avatar } = user;
+  const avatar_url = user_avatar ? user_avatar : 'https://static.persion.cn/images/others/dog.webp';
+  // 没有完善过信息
+  if(!user_avatar){
+    // 更新头像
+    await updateFun(UserModel, { _id }, { user_avatar: avatar_url });
+  }
+  const create_time = Date.now();
+  const rule = { user_id: _id };
+  const [model, data] = user_type === 'BOSS' ? 
+  [ JobModel, { recruitment_salary, recruitment_job, recruitment_request, create_time, company_name, avatar_url, ...rule, nickname }] 
+  : 
+  [ SeekerModel, { apply_job, personal_introduction, create_time, avatar_url, ...rule, nickname } ];
+  // 查询数据库中有没有该数据
+  const arr = await addFun(model, data);
+    if(arr.length > 0){
+      res.status(200).json({
+        err_code: 0,
+        msg: "完善信息成功",
+        data: arr[0]
+      })
+    } else {
+      res.status(500).json({
+        err_code: "UNKNOW_ERROR",
+        msg: '未知错误'
+      })
+    }
 })
 
 

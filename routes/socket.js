@@ -91,8 +91,8 @@ router.get('/getMessageList', async(req, res, next) => {
 })
 
 // 更新已读
-router.put('/updateMessageList', async(req, res, next) => {
-  const { chat_id } = req.query;
+router.patch('/updateMessageList', async(req, res, next) => {
+  const { chat_id } = req.body;
   const user = await verifyUser(req, res);
   const { _id } = user;
   const res1 = await updateManyFun(MessageModel, { to_user_id: _id, from_user_id: chat_id }, { read: true })
